@@ -6,6 +6,8 @@ import Navigation exposing (Location)
 import Html.Events.Extra exposing (onClickPreventDefault)
 import UrlParser as Url
 import Time exposing (Time)
+import Random exposing (Generator, Seed)
+import Set
 
 
 main : Program Flags Model Msg
@@ -18,6 +20,11 @@ main =
         }
 
 
+startTimeSeed : Time -> Seed
+startTimeSeed startTime =
+    Random.initialSeed <| round startTime
+
+
 
 -- MODEL
 
@@ -26,6 +33,7 @@ type alias Model =
     { history : List Location
     , route : Route
     , flags : Flags
+    , rset : Set.Set Int
     }
 
 
@@ -37,9 +45,33 @@ type alias Flags =
 
 init : Flags -> Location -> ( Model, Cmd Msg )
 init flags location =
-    ( Model [ location ] (parseLocation location) flags
-    , Cmd.none
-    )
+    let
+        set =
+            getRList 9 1 100 (startTimeSeed flags.currentTime) Set.empty
+    in
+        ( Model [ location ] (parseLocation location) flags set
+        , Cmd.none
+        )
+
+
+getR : Int -> Int -> Seed -> ( Int, Seed )
+getR min max seed =
+    Random.step (Random.int min max) seed
+
+
+getRList : Int -> Int -> Int -> Seed -> Set.Set Int -> Set.Set Int
+getRList howMany min max seed set =
+    let
+        ( rint, seed_ ) =
+            Random.step (Random.int min max) seed
+
+        set_ =
+            Set.insert rint set
+    in
+        if Set.size set_ < howMany then
+            Set.union set_ (getRList howMany min max seed_ set_)
+        else
+            set_
 
 
 
@@ -85,6 +117,8 @@ view model =
         , pageView model
         , h1 [] [ text "History" ]
         , ul [] (List.map viewLocation model.history)
+        , div [] [ text <| toString model.rset ]
+        , div [] [ text <| toString <| Set.size model.rset ]
         ]
 
 
