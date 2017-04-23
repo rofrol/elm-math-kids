@@ -33,7 +33,7 @@ type alias Model =
     { history : List Location
     , route : Route
     , flags : Flags
-    , rset : Set.Set Int
+    , set : Set.Set ( Int, Int )
     }
 
 
@@ -47,7 +47,7 @@ init : Flags -> Location -> ( Model, Cmd Msg )
 init flags location =
     let
         set =
-            getRList 9 1 100 (startTimeSeed flags.currentTime) Set.empty
+            getRList 9 0 100 (startTimeSeed flags.currentTime) Set.empty
     in
         ( Model [ location ] (parseLocation location) flags set
         , Cmd.none
@@ -59,17 +59,20 @@ getR min max seed =
     Random.step (Random.int min max) seed
 
 
-getRList : Int -> Int -> Int -> Seed -> Set.Set Int -> Set.Set Int
+getRList : Int -> Int -> Int -> Seed -> Set.Set ( Int, Int ) -> Set.Set ( Int, Int )
 getRList howMany min max seed set =
     let
         ( rint, seed_ ) =
             Random.step (Random.int min max) seed
 
+        ( rint2, seed__ ) =
+            Random.step (Random.int min (max - rint)) seed_
+
         set_ =
-            Set.insert rint set
+            Set.insert ( rint, rint2 ) set
     in
         if Set.size set_ < howMany then
-            Set.union set_ (getRList howMany min max seed_ set_)
+            Set.union set_ (getRList howMany min max seed__ set_)
         else
             set_
 
@@ -117,9 +120,14 @@ view model =
         , pageView model
         , h1 [] [ text "History" ]
         , ul [] (List.map viewLocation model.history)
-        , div [] [ text <| toString model.rset ]
-        , div [] [ text <| toString <| Set.size model.rset ]
+        , div [] [ text <| toString model.set ]
+        , div [] <| Set.foldl listFromSet [] model.set
         ]
+
+
+listFromSet : ( Int, Int ) -> List (Html msg) -> List (Html msg)
+listFromSet ( x, y ) acc =
+    acc ++ [ div [] [ input [ value <| toString x ] [], input [ value <| toString y ] [], input [] [] ] ]
 
 
 pageView : Model -> Html Msg
