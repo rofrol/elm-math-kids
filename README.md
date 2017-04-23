@@ -1,4 +1,10 @@
-# elm navigation example
+# elm-math-kids
+
+TODO:
+
+- [ ] Convert set to list, shuffle list, set update functions for inputs using updateElement from http://stackoverflow.com/questions/34502706/elm-update-elements-in-a-list
+
+## elm navigation example
 
 I've created this example to have easy reference code how to use elm-lang/navigation without using hashes.
 
